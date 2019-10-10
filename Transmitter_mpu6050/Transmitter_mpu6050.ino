@@ -48,7 +48,7 @@ void loop()
     value_avgY=(value_avgY+value_arrayY[j])/6;                   //Taking Average
  radio.write(&value, sizeof(value));                             //Transmitting Data          
  radio.write(&value_avgX, sizeof(value_avgX));
- radio.write(&value_avgX, sizeof(value_avgX)); 
+ radio.write(&value_avgY, sizeof(value_avgY)); 
  Serial.println(value);
  Serial.println(value_avgX);
  Serial.println(value_avgY);
