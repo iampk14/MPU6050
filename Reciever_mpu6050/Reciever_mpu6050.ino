@@ -36,7 +36,6 @@ void loop()
    radio.read(&value, sizeof(value));
    Serial.println(value_avgX);
    Serial.println(value_avgY);
-   Serial.println(value);
 
    value_array[0]=value;
   value_avg=0;
@@ -62,6 +61,7 @@ void loop()
   {
    ir.write(0);  
   }
+    Serial.println(value);
 delay(25);
   }
 
