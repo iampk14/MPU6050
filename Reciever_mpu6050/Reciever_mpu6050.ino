@@ -3,48 +3,66 @@
 #include <RF24.h>
 #include <Servo.h>
 
-//create an RF24 object
+
 RF24 radio(9, 8);  // CE, CSN
 Servo servoarm;
 Servo servobase;
+Servo ir;
 int servo1 = 5;
 int servo2 = 4;
-//address through which two modules communicate.
+int servo3 = 2 ;
 const byte address[6] = "00001";
-  //int ax,acc[2];
+int value,value_avgX,value_avgY;
+int value_array[6]={0},value_avg=0,i=0;
+
 void setup()
 {
   while (!Serial);
-    Serial.begin(9600);
-  servoarm.attach(servo1); 
+    Serial.begin(115200);
+  servoarm.attach(servo1);
   servobase.attach(servo2);
+  ir.attach(servo3);
   radio.begin();
-  
-  
-  //set the address
   radio.openReadingPipe(0, address);
-  
-  //Set module as receiver
   radio.startListening();
 }
 
 void loop()
 {
-  //Read the data if available in buffer
   if (radio.available())
   {
-     int ax,ay;
-   radio.read(&ax,sizeof(ax));
-   radio.read(&ay,sizeof(ay));
-   
-   Serial.println(ax);  
-    Serial.println(ay);  
-   delay(2000);  
-  ax=map(ax,-17000,17000,0,180);
-  ay=map(ay,-17000,17000,0,180);
-  servoarm.write(ax);
-  servobase.write(ay);
+   radio.read(&value_avgX,sizeof(value_avgX));
+   radio.read(&value_avgY,sizeof(value_avgY));
+   radio.read(&value, sizeof(value));
+   Serial.println(value_avgX);
+   Serial.println(value_avgY);
+   Serial.println(value);
 
+   value_array[0]=value;
+  value_avg=0;
+  for(i=0;i<6;i++)
+    value_avg=value_avg+value_array[i];
 
-  }  
-}
+  if(value_avg>2)
+    value=1;
+    else
+    value=0;
+  //update
+  for(i=5;i>0;i--)
+    value_array[i]=value_array[i-1];
+  value_avgX=map(value_avgX,-17000,17000,0,180);
+  value_avgY=map(value_avgY,-17000,17000,0,180);
+  servoarm.write(value_avgX);
+  servobase.write(value_avgY);
+  if(value==1)
+  {
+  ir.write(180);
+  }
+  else
+  {
+   ir.write(0);  
+  }
+delay(25);
+  }
+
+    }
