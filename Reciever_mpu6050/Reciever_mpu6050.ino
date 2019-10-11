@@ -1,68 +1,54 @@
+#include "Wire.h"
 #include <SPI.h>
 #include <nRF24L01.h>
 #include <RF24.h>
-#include <Servo.h>
 
 
+#include <MPU6050.h>
+MPU6050 sensor;
+
+//create an RF24 object
 RF24 radio(9, 8);  // CE, CSN
-Servo servoarm;
-Servo servobase;
-Servo ir;
-int servo1 = 5;
-int servo2 = 4;
-int servo3 = 2 ;
+
+//address through which two modules communicate.
 const byte address[6] = "00001";
-int value,value_avgX,value_avgY;
-int value_array[6]={0},value_avg=0,i=0;
+
+int16_t ax ,ay, az, gx, gy, gz;
+const int ProxSensor=A3;
+int value;
+
 
 void setup()
 {
-  while (!Serial);
-    Serial.begin(115200);
-  servoarm.attach(servo1);
-  servobase.attach(servo2);
-  ir.attach(servo3);
+  pinMode(ProxSensor,INPUT);
+  Wire.begin();
+  Serial.begin(9600);
   radio.begin();
-  radio.openReadingPipe(0, address);
-  radio.startListening();
+  sensor.initialize();
+  //set the address
+  radio.openWritingPipe(address);
+  
+  //Set module as transmitter
+  radio.stopListening();
 }
-
 void loop()
 {
-  if (radio.available())
+  
+  sensor.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+  radio.write(&ax, sizeof(ax));
+  radio.write(&ay, sizeof(ay));
+  Serial.println(ax);
+  Serial.println(ay);
+  value = analogRead(ProxSensor);
+  if(value>=100)
   {
-   radio.read(&value_avgX,sizeof(value_avgX));
-   radio.read(&value_avgY,sizeof(value_avgY));
-   radio.read(&value, sizeof(value));
-   Serial.println(value_avgX);
-   Serial.println(value_avgY);
-
-   value_array[0]=value;
-  value_avg=0;
-  for(i=0;i<6;i++)
-    value_avg=value_avg+value_array[i];
-
-  if(value_avg>2)
     value=1;
-    else
-    value=0;
-  //update
-  for(i=5;i>0;i--)
-    value_array[i]=value_array[i-1];
-  value_avgX=map(value_avgX,-17000,17000,0,180);
-  value_avgY=map(value_avgY,-17000,17000,0,180);
-  servoarm.write(value_avgX);
-  servobase.write(value_avgY);
-  if(value==1)
-  {
-  ir.write(180);
   }
   else
   {
-   ir.write(0);  
+    value=0;
   }
-    Serial.println(value);
-delay(25);
-  }
-
-    }
+  radio.write(&value, sizeof(value));
+  Serial.println(value);
+ delay(4);
+} 
